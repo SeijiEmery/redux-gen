@@ -1,0 +1,38 @@
+// todo.rxm
+
+class Todo {
+    name: string;
+    visible: boolean = true;
+    constructor (name: string) {
+        this.name = name;
+    }
+}
+
+model(todo) {
+    state: { todos: Array<Todo>, filtered: Array<Todo> },
+    actions: {
+        add_todo: { text: string },
+        toggle_todo: { index: number },
+        set_visibility_filter: { filter: string },
+    },
+    reducers: {
+        add_todo: (state, action) => ({ 
+            todos: state.todos.slice().append(new Todo(text)),
+            ...state
+        }),
+        toggle_todo: (state, action) => ({
+            todos: state.todo.map((todo, index) => 
+                index == action.index ?
+                    { visible: !todo.visible, ...todo } 
+                    : todo
+            ),
+            ...state
+        }),
+        set_visibility_filter: (state, action) => ({
+            filtered: state.todos.filter((todo) =>
+                fuzzyMatch(todo, action.filter)
+            ),
+            ...state
+        })
+    }
+}
