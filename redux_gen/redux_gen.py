@@ -2,6 +2,7 @@ import yaml
 import re
 import os
 from utils.name_utils import reformat
+import yamale
 
 
 lower_camel_case = lambda name: reformat(name, 'camel')
@@ -13,8 +14,10 @@ upper_underscores = lambda name: reformat(name, 'upper')
 def redux_gen(file, out_dir):
     with open(file) as f:
         spec = yaml.load(f.read())
-    # print(spec)
-    # validate(spec, validation_spec)
+
+    def validate(spec):
+        schema = yamale.make_schema('../schema.yaml')
+        schema.validate(spec, file, True)
 
     file_name = os.path.split(file)[1].split('.')[0]
 
@@ -55,12 +58,6 @@ def redux_gen(file, out_dir):
                 for key, value in obj.items()
             ]))
         return str(obj)
-
-    def validate(spec):
-        enforce = enforcement()
-        enforce('state' in spec, "missing state defn")
-        enforce(type(spec['state']) == dict, "invalid state defn")
-        enforce(type(spec['actions']) == dict, "invalid actions defn")
 
     def gen_state_type(spec):
         return 'export interface {StateNameUpper} {{{content}\n}}'.format(

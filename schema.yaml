@@ -3,7 +3,7 @@
 # output language: must be 'typescript' or 'js'
 lang: regex('typescript|js')
 target: regex('redux', required=False)
-export: string(requierd=False)
+export: str(required=False)
 config: include('config', required=False)
 
 # name for the generated reducer function (optional)
@@ -22,7 +22,7 @@ reducer_name: str(required=False)
 #     #       bar: { baz: List<Any> }
 #     #    }>
 #
-state: map(any())
+state: map(any(list(), str()))
 
 # map of all defined actions.
 # names are translated, so all of the following are equivalent:
