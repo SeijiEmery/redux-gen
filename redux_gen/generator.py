@@ -21,7 +21,7 @@ def from_keys(**kwargs):
 
 
 class Config:
-    def __init__(self, target_single_file=True):
+    def __init__(self, target_single_file=False):
         self.name_config = from_keys(
             State=from_keys(fmt='pascal', with_suffix='State'),
             Actions=from_keys(fmt='pascal', with_suffix='Actions'),

@@ -14,7 +14,7 @@ def gen_redux_states_and_actions(renderer, file_name, state, actions, config):
 
     action_enum = EnumDecl(Actions, [])
 
-    print(actions)
+    # print(actions)
     actions = {name: {
         'params': [TypedParam(config.names('var', k), Type(v)) for k, v in action['params'].items()],
         'reduce': {config.names('var', k): v for k, v in action['reduce'].items()},
@@ -65,7 +65,7 @@ def gen_redux_states_and_actions(renderer, file_name, state, actions, config):
             'actions'), action_ctors, imports=types)
         reducer = renderer.write_file(config.out_path(
             'reducer'), reducer_fcn, imports=types)
-        index = renderer.write_file(imports=[types, actions, reducer])
+        index = renderer.write_file(config.out_path('index'), imports=[types, actions, reducer])
 
 
 

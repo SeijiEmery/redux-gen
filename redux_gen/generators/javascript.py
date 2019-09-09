@@ -68,3 +68,16 @@ def render_object_initializer(stmt, context):
             ('%s: %s') % (k, str(context.render(v)))
             for k, v in stmt.kv_fields.items()
         ]), stmt.origin)
+
+
+@renderer(Javascript, ActionExpr)
+def render_typescript_action_expr(action, context):
+    if type(action.expr) == dict:
+        for k, expr in action.expr.items():
+            return {
+                'set': lambda: str(expr),
+                'map': lambda: 'state.%s.map(%s)'%(action.name, expr),
+                'filter': lambda: 'state.%s.filter(%s)'%(action.name, expr),
+                'append': lambda: 'state.%s.concat(%s)'%(action.name, expr),
+            }[k]()
+    return str(action.expr)

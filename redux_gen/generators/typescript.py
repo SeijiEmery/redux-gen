@@ -27,7 +27,7 @@ def render_typescript_param(param, context):
 
 @renderer(Typescript, InterfaceDecl)
 def render_typescript_interface_decl(interface, context):
-    return 'export interface %s { %s }' % (
+    return 'interface %s { %s }' % (
         interface.name, ''.join([
             '%s;' % context.render(param)
             for param in interface.members
@@ -36,7 +36,7 @@ def render_typescript_interface_decl(interface, context):
 
 @renderer(Typescript, FunctionDefn)
 def render_typescript_function_defn(fcn, context):
-    return 'export function %s (%s) -> %s { %s }' % (
+    return 'function %s (%s) -> %s { %s }' % (
         fcn.name, ', '.join([
             context.render(param)
             for param in fcn.params
@@ -44,4 +44,9 @@ def render_typescript_function_defn(fcn, context):
         context.render(fcn.return_type),
         context.render(fcn.body))
 
+@renderer(Typescript, EnumDecl)
+def render_typescript_enum_defn(enum, context):
+    return 'type %s = %s;'%(
+        context.render(enum.type),
+        ' | '.join(context.render(enum.members)))
 

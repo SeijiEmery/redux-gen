@@ -40,8 +40,18 @@ class Target():
             type_key, obj))
 
     def write_file(self, path, *objects, imports=None):
-        for obj in objects:
+        def write(obj):
             print(jsbeautifier.beautify(str(self.render(obj))))
+
+        def write_recursive(objects):
+            for obj in objects:
+                if type(obj) == list:
+                    write_recursive(obj)
+                elif type(obj) == dict:
+                    write_recursive(obj.values())
+                else:
+                    write(obj)
+        write_recursive(objects)
 
 
 
