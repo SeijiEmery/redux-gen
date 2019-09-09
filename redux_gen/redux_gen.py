@@ -4,49 +4,6 @@ import os
 from utils.name_utils import reformat
 
 
-validation_spec = {
-    'lang': {'typescript', 'js'},
-    'state': dict,
-    'reducer_name': str,
-    'actions': (dict, lambda actions: all([
-        validate(action, {
-            'params': dict,
-            'reduce': one_of({
-                'set': str,
-                'append': str,
-                'map': (str, re_match(
-                    '(', '{ident}', '{ident}', ')', '=>', '{any}'))
-            })
-        }) for action in actions]))
-}
-
-def validate(doc, spec):
-    True
-
-def re_match(regex_components):
-    replacements = {
-        '(': r'\(', ')': r'\)',
-        '{ident}': r'[\w_]+',
-        '{any}': r'[\w\W]*'
-    }
-    regex = r'\s*'.join([
-        replacements[component] 
-        if component in replacements
-        else component
-        for component in regex_components
-    ])
-    return lambda value: re.match(value)
-
-def one_of(spec):
-    def check_dict(item):
-        validate(item, spec)
-        enforce_valid(len(item.keys()) == 1,
-            "expected only one of '%s', got '%s'",
-            spec.keys(), item.keys())
-    return (type(spec), {
-        'dict': check_dict,
-    }[str(type(spec))])
-
 lower_camel_case = lambda name: reformat(name, 'camel')
 upper_camel_case = lambda name: reformat(name, 'pascal')
 lower_underscores = lambda name: reformat(name, 'lower')
