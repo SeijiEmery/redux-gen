@@ -2,7 +2,22 @@ import yaml
 import re
 import os
 from utils.name_utils import reformat
+# from types import make_type
 import yamale
+
+def make_type(obj):
+    type_map = {'string': 'String', 'number': 'Number'}
+    if type(obj) == str:
+        if obj in type_map:
+            return type_map[obj]
+        return obj
+    if type(obj) == list:
+        return 'List<{}>'.format(', '.join(map(make_type, obj)))
+    if type(obj) == dict:
+        return '{ %s }' % (', '.join([
+            '%s: %s' % (key, make_type(value))
+            for key, value in obj.items()
+        ]))
 
 
 def redux_gen(file, out_dir):
@@ -12,6 +27,8 @@ def redux_gen(file, out_dir):
     def validate(spec):
         schema = yamale.make_schema('../schema.yaml')
         schema.validate(spec, file, True)
+
+    # make_type = type_converter('typescript')
 
     file_name = os.path.split(file)[1].split('.')[0]
     names = {
@@ -29,21 +46,6 @@ def redux_gen(file, out_dir):
             if not cond:
                 raise exception(msg.format(*args, **kwargs))
         return enforce
-
-    def make_type(obj):
-        type_map = {'string': 'String', 'number': 'Number'}
-        if type(obj) == str:
-            if obj in type_map:
-                return type_map[obj]
-            return obj
-        if type(obj) == list:
-            return 'List<{}>'.format(', '.join(map(make_type, obj)))
-        if type(obj) == dict:
-            return '{ %s }' % (', '.join([
-                '%s: %s' % (key, make_type(value))
-                for key, value in obj.items()
-            ]))
-        return str(obj)
 
     def gen_state_type(spec):
         return 'export interface {StateNameUpper} {{{content}\n}}'.format(

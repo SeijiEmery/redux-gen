@@ -1,0 +1,89 @@
+javascript:
+  types:
+    decl:
+      int:    number
+      float:  number
+      str:    string
+      dict: '{ ... }'
+      list: Array<...>
+  action-extensions:
+    append: state.$var.concat($expr)
+    map: state.$var.map($expr)
+    filter: state.$var.filter($expr)
+  syntax:
+    type-signatures: $var
+    fcn-signatures: export function $name ($params) { $body }
+    interface-decl: ''
+    interface-elem: ''
+    action-ctor-body: |
+      return { type: '$elem', $params };
+    reducer-state-return: return { $cases state... };
+    reducer-state-var: |
+      state.$var: $expr,
+    enum:
+      decl: ''
+      decl_elem_0: ''
+      decl_elem: ''
+      elem_expr: "'$elem'"
+      decl_type: "'$elem'" 
+      match: switch($expr) { $body }
+      match-case: "case '$elem': $expr"
+      # match-return-case: 'case $elem: return $expr'
+---
+typescript:
+  inheirit: javascript
+  types:
+    decl:
+      dict: '{ ... }'
+      list: Array<...>
+    create:
+      dict: '{ ... }'
+      list: '[ ... ]'
+  syntax:
+    type-signatures: '$var: $type'
+    fcn-signatures: |
+      export function $name ($params) -> $return-type { $body }
+    interface-decl: |
+      export interface $name { $body }
+    interface-elem: |
+      $name: $type;
+    return-action: |
+      return { type:  }
+    enum:
+      decl: export type $type $body;
+      decl_elem_0: "= '$elem'"
+      decl_elem: "| '$elem'"
+---
+feature string-enums:
+  mixin-to: typescript    
+---
+feature typescript-enums:
+  mixin-to: typescriptf
+  syntax:
+    enum:
+      decl: export enum $type { $body }
+      decl_elem_0: $elem = 0,
+      decl_elem: $elem,
+      elem_expr: $type.$elem
+      decl_type: "$type"
+      match: switch($expr) { $body }
+      match-case: 'case $type.$elem: $expr'
+      # match-return-case: 'case $type.$elem: return $expr;'
+    action-ctor-body: |
+      return { type: $type.$elem, $params };
+---
+feature immutable:
+  mixin-to: [typescript, javascript, js-flow]
+  types:
+    decl:
+      dict: '{ ... }'
+      list: 'List<...>'
+    create:
+      dict: '{ ... }'
+      list: 'List([ ... ])'
+  add_includes:
+    - immutable
+  action-extensions:
+    append: state.$var.append($expr)
+    map: state.$var.map($expr)
+    filter: state.$var.filter($expr)
