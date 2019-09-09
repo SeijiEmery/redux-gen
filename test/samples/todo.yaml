@@ -1,0 +1,32 @@
+
+lang: typescript
+state:
+  todos: [{ text: string, completed: bool }]
+  visibilityFilter: string
+
+reducer_name: todo
+actions:
+  add todo:
+    params:
+      text: string
+    reduce:
+      todos:
+        append: |
+          { text: action.text, completed: false }
+
+  toggle todo:
+    params:
+      index: number
+    reduce:
+      todos:
+        map: |
+          (todo, index) => action.index == index 
+            ? { text: todo.text, completed: !todo.completed }
+            : todo
+
+  set visibility filter:
+    params:
+      filter: string
+    reduce:
+      visibilityFilter:
+        set: action.visibilityFilter

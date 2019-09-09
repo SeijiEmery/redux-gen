@@ -1,0 +1,184 @@
+# YAML schema using https://github.com/23andMe/Yamale
+
+# output language: must be 'typescript' or 'js'
+lang: regex('typescript|js')
+target: regex('redux', required=False)
+export: string(requierd=False)
+config: include('config', required=False)
+
+# name for the generated reducer function (optional)
+reducer_name: str(required=False)
+
+# state defn: map of js fields => js / ts types
+# examples:
+#   state:
+#     foo: string                           # String
+#     bar: SomeType                         # SomeType
+#     baz: [string]                         # List<String>
+#     borg: { foo: number, bar: [string] }  # object defn
+#     blarg: [{ foo: [SomeType], bar: { baz: [] } }]
+#     # => List<{ 
+#     #       foo: List<SomeType>, 
+#     #       bar: { baz: List<Any> }
+#     #    }>
+#
+state: map(any())
+
+# map of all defined actions.
+# names are translated, so all of the following are equivalent:
+#
+#   make pillows   => MakePillowsAction
+#   make_pillows   => MakePillowsAction
+#   makePillows    => ...
+#   MakePillows    => ...
+#   MAKE_PILLOWS   => ...
+#
+# actions combines two things, a data declaration (params), and a
+# reducer impl (reducer). There are several things to unpack here:
+#
+# Suppose our action defn is as follows:
+#
+# pillow.yaml
+#   ...
+#   actions:
+#     make pillows:
+#       params:
+#         name: string
+#         the pillow: AFluffyPillowTemplate
+#         fluffiness: number
+#       reduce:
+#         (reducer defn...)
+#     ...
+#
+# Then this will generate the following:
+#
+# some/path/pillow/types.ts
+#
+#   export interface MakePillowsAction {
+#       type: 'MAKE_PILLOWS';
+#       name: String;
+#       thePillow: AFluffyPillowTemplate;
+#       fluffiness: Number;
+#   }
+#   ...
+#   export type PillowActions = ... | MakePillowsAction | ...
+#
+# some/path/pillow/actions.ts
+#
+#   export function makePillows (
+#       name: String, thePillow: AFluffyPillowTemplate, fluffiness: Number
+#   ) {
+#       return { type: 'MAKE_PILLOWS', name, thePillow, fluffiness };
+#   }
+#
+# some/path/pillow/reducer.ts
+#
+#   export function <reducer_name> 
+#       (state: PillowState, action: PillowActions) 
+#       -> PillowState
+#   {
+#       switch (state.type) {
+#           case 'MAKE_PILLOWS':
+#               return (reducer impl...);
+#           ...
+#       }
+#   }
+#
+# params are quite straightforward.
+# the reducer takes a little bit more explanation (see below)
+actions: map(include('action'))
+---
+action:
+  params: map(str(), int, list())
+  reduce: any(
+      map(include('reduce_set')),
+      map(include('reduce_map')),
+      map(include('reduce_append')),
+      map(include('reduce_filter')),
+      str())
+---
+# Reducer impl:
+#
+# Note that a redux reducer generally takes on the following form:
+#
+# reduce (state: State, actions: Actions) -> State {
+#     ...
+#     return {
+#         someStateMember: some updated state value,
+#         someOtherMember: some other state value,
+#         state...  // (copy all other members)
+#     };
+# }
+#
+# as such the general form of a reducer is:
+#
+# actions:
+#   params:
+#       fluffiness: number
+#   reducer:
+#       some state member: <action1>
+#       some other member: <action2>
+#
+# which is the same as the above but with less boilerplate.
+#
+# In their simplest form these actions are just javascript expressions.
+# However we also provide the following to, again, get rid of common boilerplate:
+#
+#   reducer:
+#       pillows:
+#           append: { fluffiness: action.fluffiness }
+# 
+#   reducer:
+#       pillows:
+#           map: (pillow, index) => <some expr...>
+#
+# These are equivalent to:
+#
+#   reducer:
+#       pillows: state.pillows.concat(<some expr>)
+#
+#   reducer:
+#       pillows: state.pillows.map((pillow, index) => <some expr>)
+#
+# And produce these generated expressions:
+#
+#   return { pillows: state.pillows.concat(<some expr>), state... }
+#
+#   return { pillows: state.pillows.map((pillow, index) => <some expr>), state... }
+#
+#
+# In addition there is also 
+#
+#   reducer:
+#       set: <expr>
+#
+# Which is equivalent to just
+#
+#   reducer: <expr>
+#
+reduce_set:
+  set: str()
+---
+reduce_map:
+  map: str()
+---
+reduce_append:
+  append: str()
+---
+reduce_filter:
+  filter: str()
+
+# configuration options
+---
+config:
+  lang: regex('typescript|javascript', required=False)
+  disable_name_conversion: bool(required=False)
+  var_names: regex('camel|pascal|underscores|uppercase', required=False)
+  fcn_names: regex('camel|pascal|underscores|uppercase', required=False)
+  type_names: regex('camel|pascal|underscores|uppercase', required=False)
+  convert_singular_plural_nouns: bool(required=False)
+  output_type: regex('single_file|directory', required=False)
+  gen_actions_file: bool(required=False)
+  gen_types_file: bool(required=False)
+  gen_reducer_file: bool(required=False)
+  gen_index_file: bool(required=False)
