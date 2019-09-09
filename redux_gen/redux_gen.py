@@ -5,12 +5,6 @@ from utils.name_utils import reformat
 import yamale
 
 
-lower_camel_case = lambda name: reformat(name, 'camel')
-upper_camel_case = lambda name: reformat(name, 'pascal')
-lower_underscores = lambda name: reformat(name, 'lower')
-upper_underscores = lambda name: reformat(name, 'upper')
-
-
 def redux_gen(file, out_dir):
     with open(file) as f:
         spec = yaml.load(f.read())
@@ -20,23 +14,15 @@ def redux_gen(file, out_dir):
         schema.validate(spec, file, True)
 
     file_name = os.path.split(file)[1].split('.')[0]
-
-    file_name = upper_camel_case(file_name)
-    file_name_plural = file_name if file_name.endswith(
-        's') else file_name + 's'
-    file_name_singular = file_name[:-
-                                   1] if file_name.endswith('s') else file_name
-
-    state_type_name = '{}State'.format(file_name_singular)
-    actions_type_name = '{}Actions'.format(file_name_singular)
-
-    def action_fcn_name(action): return lower_camel_case(action)
-
-    def action_type_name(action): return '{}Action'.format(
-        upper_camel_case(action))
-
-    def action_string_type(action): return upper_underscores(action)
-    reducer_fcn_name = spec['reducer_name'] if 'reducer_name' in spec else 'reduce' + file_name_plural
+    names = {
+        'StateType': reformat(file_name, 'pascal', noun_form='singular', with_suffix='State'),
+        'ActionEnumType': reformat(file_name, 'pascal', noun_form='plural', with_suffix='Actions'),
+        'reducerFunction': spec['reducer_name'] if 'reducer_name' in spec else \
+            reformat(file_name, 'camel', noun_form='singular', with_prefix='reduce'),
+        'ActionType': lambda action: reformat(action, 'pascal', with_suffix='Action'),
+        'actionFunctionName': lambda action: reformat(action, 'camel'),
+        'ACTION_ENUM': lambda action: "'%s'"%reformat(action, 'upper'),
+    }
 
     def enforcement(exception=Exception):
         def enforce(cond, msg, *args, **kwargs):
@@ -61,7 +47,7 @@ def redux_gen(file, out_dir):
 
     def gen_state_type(spec):
         return 'export interface {StateNameUpper} {{{content}\n}}'.format(
-            StateNameUpper=state_type_name,
+            StateNameUpper=names['StateType'],
             content=''.join([
                 '\n\t{key}: {type}'.format(
                     key=var_name, type=make_type(var_type))
@@ -71,7 +57,7 @@ def redux_gen(file, out_dir):
     def gen_action_types(spec):
         return '\n'.join([
             'export interface {ActionNameUpper} {{{content}}}'.format(
-                ActionNameUpper=action_type_name(action_name),
+                ActionNameUpper=names['ActionType'](action_name),
                 content=''.join(
                     ['\n\ttype: %s' % (make_type('string'))] + [
                         '\n\t{key}: {type}'.format(
@@ -81,9 +67,9 @@ def redux_gen(file, out_dir):
             )
             for action_name, action_spec in spec['actions'].items()
         ]) + '\nexport type {ActionsNameUpper}\n\t= {types};\n'.format(
-            ActionsNameUpper=actions_type_name,
+            ActionsNameUpper=names['ActionEnumType'],
             types='\n\t| '.join([
-                '%sAction' % upper_camel_case(action_name)
+                names['ActionType'](action_name)
                 for action_name in spec['actions'].keys()
             ])
         )
@@ -91,14 +77,14 @@ def redux_gen(file, out_dir):
     def gen_action_ctors(spec):
         return '\n'.join([
             'export function {actionName} ({params}) -> {ActionType} {{\n\t{body}\n}}'.format(
-                actionName=action_fcn_name(action_name),
-                ActionType=action_type_name(action_name),
+                actionName=names['actionFunctionName'](action_name),
+                ActionType=names['ActionType'](action_name),
                 params=', '.join([
                     '{name}: {var}'.format(name=name, var=make_type(var_type))
                     for name, var_type in action_spec['params'].items()
                 ]),
-                body="return {{ type: '{STRING_TYPE}', {params} }};".format(
-                    STRING_TYPE=action_string_type(action_name),
+                body="return {{ type: {ACTION_ENUM}, {params} }};".format(
+                    ACTION_ENUM=names['ACTION_ENUM'](action_name),
                     params=', '.join(action_spec['params'].keys())
                 )
             )
@@ -132,13 +118,13 @@ def redux_gen(file, out_dir):
 
         return '\n'.join([
             'export function {reducerName} (state: {StateType}, action: {ActionType}) -> {StateType} {{\n\t{body}\n}}'.format(
-                reducerName=reducer_fcn_name,
-                StateType=state_type_name,
-                ActionType=actions_type_name,
+                reducerName=names['reducerFunction'],
+                StateType=names['StateType'],
+                ActionType=names['ActionEnumType'],
                 body='switch (state.type) {{\n\t\t{cases}\n\t}}'.format(
                     cases=''.join([
-                        "case '{ACTION_TYPE}': return {{{elems}\n\t\t\tstate...\n\t\t}};\n\t\t".format(
-                            ACTION_TYPE=action_string_type(action_name),
+                        "case {ACTION_ENUM}: return {{{elems}\n\t\t\tstate...\n\t\t}};\n\t\t".format(
+                            ACTION_ENUM=names['ACTION_ENUM'](action_name),
                             elems=gen_reducer_action(action_spec['reduce']))
                         for action_name, action_spec in spec['actions'].items()
                     ])

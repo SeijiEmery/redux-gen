@@ -1,14 +1,42 @@
 import re
 
 
-def reformat(name, fmt):
+def reformat(name, fmt, noun_form=None, with_suffix=None, with_prefix=None):
+    components = split_name(name)
+    if with_prefix is not None:
+        if type(with_prefix) == list:
+            components = with_prefix + components
+        else:
+            components = [with_prefix] + components
+    if with_suffix is not None:
+        if type(with_suffix) == list:
+            components += with_suffix
+        else:
+            components.append(with_suffix)
+    if noun_form is not None:
+        components[-1] = {
+            'plural': make_plural,
+            'singular': make_singular
+        }[noun_form](components[-1])
     return {
         'camel': lower_camel_case,
         'pascal': upper_camel_case,
         'lower': lower_underscores,
         'upper': upper_underscores,
         'space': lower_space_separated,
-    }[fmt](name)
+    }[fmt](components)
+
+
+def make_singular(name):
+    if name[-1].lower().endswith('s'):
+        return name[:-1]
+    return name
+
+
+def make_plural(name):
+    if not name[-1].lower().endswith('s'):
+        return name + 's'
+    return name
 
 
 def upper_camel_case(name):
@@ -106,6 +134,9 @@ def split_name(name):
         for component in re.split(r'[\s_\-]+', name):
             for component in split_camel_case(component):
                 yield component
+
+    if type(name) == list:
+        return name
     return list(split_parts())
 
 
@@ -123,3 +154,10 @@ if __name__ == '__main__':
             lower_underscores(name), split_name(lower_underscores(name)),
             upper_underscores(name), split_name(upper_underscores(name)),
         ))
+
+    for fmt in ['pascal', 'camel', 'upper', 'lower', 'space']:
+        for form in [None, 'singular', 'plural']:
+            print(fmt, form)
+            print(reformat("fooish barish baz", fmt, noun_form=form, with_suffix='blarg'))
+            print(reformat("fooish barish bazes", fmt, noun_form=form, with_prefix='blargish'))
+            print()
