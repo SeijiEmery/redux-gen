@@ -41,7 +41,7 @@ class Type(JSTypeInfo):
 class Export(JSEntity):
     def __init__(self, item):
         self.item = item
-        enforce_type(item, JSConcreteEntity)
+        enforce_type(item, JSEntity)
 
 
 class TypedParam(JSTypeInfo):
@@ -58,6 +58,12 @@ class InterfaceDecl(JSTypeInfo):
         self.members = members
         enforce_type(name, str)
         enforce_list_of(members, TypedParam)
+
+
+class EnumTypeOf(Type): # note: exists soley to disambiguate an edge case 
+    def __init__(self, enum_key):   # between string-based vs true enums in typescript...
+        self.enum_key = enum_key
+        enforce_type(enum_key, EnumKey)
 
 
 class EnumKey(JSConcreteEntity):

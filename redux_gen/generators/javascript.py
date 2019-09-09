@@ -14,6 +14,11 @@ def render_enum_value(key, context):
     return "'%s'" % key.value
 
 
+@renderer(Javascript, EnumTypeOf)
+def render_enum_pass_through(key, context):
+    return context.render(key.enum_key)
+
+
 @renderer(Javascript, Export)
 def render_export(export, context):
     return 'export %s' % context.render(export.item)
@@ -53,18 +58,15 @@ def render_match_case(stmt, context):
 @renderer(Javascript, ObjectInitializer)
 def render_object_initializer(stmt, context):
     return '{ %s }' % (
-        ', '.join([str(context.render(v)) for v in stmt.key_only_fields]) +
-        ', '.join([
+        ', '.join([str(context.render(v)) for v in stmt.key_only_fields] + [
             ('%s: %s') % (k, str(context.render(v)))
             for k, v in stmt.kv_fields.items()
         ]))
 
-
 @renderer(Javascript, PartialObjectInitializer)
-def render_object_initializer(stmt, context):
+def render_partial_object_initializer(stmt, context):
     return '{ %s, %s... }' % (
-        ', '.join([str(context.render(v)) for v in stmt.key_only_fields]) +
-        ', '.join([
+        ', '.join([str(context.render(v)) for v in stmt.key_only_fields] + [
             ('%s: %s') % (k, str(context.render(v)))
             for k, v in stmt.kv_fields.items()
         ]), stmt.origin)

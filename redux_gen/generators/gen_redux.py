@@ -1,6 +1,6 @@
 from generators.js_model import Expr, Type, TypedParam, Export, InterfaceDecl, \
     EnumDecl, EnumKey, FunctionDefn, Return, MatchStmt, MatchCase, \
-    ObjectInitializer, PartialObjectInitializer, ActionExpr
+    ObjectInitializer, PartialObjectInitializer, ActionExpr, EnumTypeOf
 
 
 def gen_redux_states_and_actions(renderer, file_name, state, actions, config):
@@ -25,7 +25,8 @@ def gen_redux_states_and_actions(renderer, file_name, state, actions, config):
 
     state_type = InterfaceDecl(State.name, state)
     action_types = {
-        name: InterfaceDecl(action['param_type'].name, action['params'])
+        name: InterfaceDecl(action['param_type'].name, action['params'] + [
+            TypedParam('type', EnumTypeOf(action['ENUM_ID'])) ])
         for name, action in actions.items()
     }
     action_enum.members = [
@@ -36,8 +37,8 @@ def gen_redux_states_and_actions(renderer, file_name, state, actions, config):
             name=action['fcn_name'],
             params=action['params'],
             return_type=action['param_type'],
-            body=Return(ObjectInitializer(action_types[name], [
-                param.type.name for param in action['params']
+            body=Return(ObjectInitializer(action_types[name], *[
+                param.name for param in action['params']
             ], type=action['ENUM_ID'])))
         for name, action in actions.items()
     ]

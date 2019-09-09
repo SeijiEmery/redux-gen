@@ -1,6 +1,6 @@
 from generators.gen_redux import gen_redux_states_and_actions
 from generators.javascript import Javascript
-from generators.typescript import Typescript
+from generators.typescript import Typescript, TypescriptEnums
 from utils.name_utils import reformat
 import yaml
 import yamale
@@ -52,6 +52,6 @@ if __name__ == '__main__':
     # print(file, spec)
     config = Config()
     # renderer = Javascript
-    for renderer in [Javascript, Typescript]:
+    for renderer in [Javascript, Typescript, Typescript & TypescriptEnums]:
         gen_redux_states_and_actions(renderer, file, spec['state'], spec['actions'], config)
 

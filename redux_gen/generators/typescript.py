@@ -3,6 +3,7 @@ from generators.js_model import *
 from generators.javascript import Javascript
 
 Typescript = create_target(derive_from=Javascript)
+TypescriptEnums = create_target()
 
 
 @renderer(Typescript, Type)
@@ -49,4 +50,31 @@ def render_typescript_enum_defn(enum, context):
     return 'type %s = %s;'%(
         context.render(enum.type),
         ' | '.join(context.render(enum.members)))
+
+@renderer(TypescriptEnums, EnumKey)
+def render_enum_key(key, context):
+    return '%s.%s'%(
+        str(context.render(key.enum_decl.type)),
+        key.value)
+
+@renderer(TypescriptEnums, EnumDecl)
+def render_enum_decl(enum, context):
+    return 'enum %s { %s }'%(
+        context.render(enum.type),
+        ', '.join([ item.value for item in enum.members ]))
+
+@renderer(TypescriptEnums, EnumTypeOf)
+def render_enum_typeof(enum, context):
+    # bypass normal enum key rendering (ie. SomeType.ELEMENT)
+    # to just render the type (ie. SomeType) in specific situations
+    # (ie. object type defns)
+    #
+    # Exists b/c in the default mode (string enums), types are given
+    # like this:
+    # (default) { type: 'SOME_ELEMENT' }
+    #
+    # wrong:    { type: SomeType.ELEMENT }
+    # correct:  { type: SomeType }
+    return context.render(enum.enum_key.enum_decl.type)
+
 

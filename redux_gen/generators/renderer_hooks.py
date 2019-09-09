@@ -1,4 +1,5 @@
 import jsbeautifier
+from generators.js_model import Export
 
 def renderer(target, model):
     def renderer(fcn):
@@ -19,6 +20,11 @@ class Target():
         })
         self.add_renderer(list, lambda values, ctx: [
             ctx.render(item) for item in values])
+
+    def __and__(self, other):
+        new_target = Target(derive_from=self)
+        new_target.renderers.update(other.renderers)
+        return new_target
 
     def render_dict_type(self, contents):
         return '{ %s }'%contents
@@ -41,7 +47,7 @@ class Target():
 
     def write_file(self, path, *objects, imports=None):
         def write(obj):
-            print(jsbeautifier.beautify(str(self.render(obj))))
+            print(jsbeautifier.beautify(str(self.render(Export(obj)))))
 
         def write_recursive(objects):
             for obj in objects:
